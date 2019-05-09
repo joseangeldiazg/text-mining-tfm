@@ -5,9 +5,11 @@
 # obtendremos los datos en un objeto de tipo arules, en el que podremos aplicar todos los métodos de este
 # paquete a nuestras reglas difusas.
 
-#Paso 1: Cargamos las reglas del fichero a un formato mas amigable en un dataframe. 
+#Paso 1: Cargamos las reglas del fichero a un formato mas amigable en un dataframe.
+
 
 require("arules")
+
 rules<-read.csv2("./data/Rules_0.7.csv", header=F, col.names = c("lhs","rhs","conf"), sep=";", stringsAsFactors = F)
 
 #Paso 2: Limpiamos los antecedentes y consecuentes

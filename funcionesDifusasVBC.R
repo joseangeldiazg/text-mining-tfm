@@ -198,3 +198,17 @@ sol = itemsetsfrecuentes(datos,minsop,Q,mu)
 
 if (length(sol[[1]]) > 0)
   reglasdifusas(minconf,sol,Q,mu)
+
+
+
+# -------------------------------------------------------------------------------
+#                           Experimento con datos reales                                   
+# -------------------------------------------------------------------------------
+
+datos = read.csv2("./data/transaccionesdifusas.csv", header = T)
+
+datos<-as.matrix(datos)
+
+datos<-apply(datos,1,as.array)
+
+datos[datos&1]
