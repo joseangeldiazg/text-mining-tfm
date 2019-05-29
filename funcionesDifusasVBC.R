@@ -75,16 +75,20 @@ R <- function(y,mu) {
     else
       return(aproxsup)
   }
+  
 }
 # -------------------------------------------------------------------------------
 inclusion <- function(A,datos,i) { # datos[i,] es la transacción de interés
   grado = 1
   for (k in A) {
+    print(datos[,k][i])
     if ((datos[,k][i]) < grado)
       grado = (datos[,k][i])
   }
   return(grado)
 }
+
+
 # -------------------------------------------------------------------------------
 itemsetsfrecuentes <- function(datos,minsop,Q,mu){
   m = ncol(datos) # núm. ítems
@@ -205,10 +209,23 @@ if (length(sol[[1]]) > 0)
 #                           Experimento con datos reales                                   
 # -------------------------------------------------------------------------------
 
-datos = read.csv2("./data/transaccionesdifusas.csv", header = T)
+#Obtenemos la matriz traspuesta de nuestra matriz normalizado ya que este algoritmo obtiene datos al revés que el nuestro
 
-datos<-as.matrix(datos)
+datos <- apply(normalizado, 2, rbind)
+dim(datos)
 
-datos<-apply(datos,1,as.array)
+colnames(datos)
+rownames(datos)
 
-datos[datos&1]
+minsop = 0.01
+minconf = 0.7
+
+Q <- function(x) return(x)
+mu = 100
+
+sol = itemsetsfrecuentes(datos,minsop,Q,mu)
+
+if (length(sol[[1]]) > 0)
+  reglasdifusas(minconf,sol,Q,mu)
+
+
