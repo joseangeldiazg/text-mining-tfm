@@ -4,6 +4,10 @@
 #***********************************************************************************
 #***********************************************************************************
 
+require("arules")
+library("tm")
+library("bigmemory")
+
 #Cargamos los datos originales y las tranasacciones totales para hacer comparaciones
 
 transacciones.completas<-read.transactions("./data/transaccionescrips.csv")
@@ -74,33 +78,25 @@ df.dataFuzzy.comparacion<-as.data.frame(normalizado)
 
 #Aplicamos en el servidor el algoritmo de reglas y en este punto podemos comprar el número de reglas que aparecen en ambas. 
 
-require("arules")
-
-rulesDifusas<-read.csv2("data/TestJoseAngel_compracion.csv", header=F, col.names = c("lhs","rhs","conf"), sep=";", stringsAsFactors = F)
-
-antecedentes<-rulesDifusas$lhs
-consecuentes<-rulesDifusas$rhs
-
-antecedentes<-strsplit(antecedentes,",")
-consecuentes<-strsplit(consecuentes,",")
-
-antecedentes<-as(antecedentes, "itemMatrix")
-consecuentes<-as(consecuentes, "itemMatrix")
-
-itemUnion <- union(itemLabels(antecedentes), itemLabels(consecuentes))
-
-antecedentes<-recode(antecedentes, itemUnion)
-consecuentes<-recode(consecuentes, itemUnion)
-
-reglasDifusas <- new("rules", lhs=antecedentes, rhs=consecuentes,
-              quality = data.frame(confidence = as.numeric(rulesDifusas$conf)))
-
+rulesDifusas<-as.arules("data/TestJoseAngel_compracion.csv")
 
 reglasDifusas_redundantes <- reglasDifusas[is.redundant(x = reglasDifusas, measure = "confidence")]
 reglasDifusas_redundantes #33180
 
 reglasDifusaslimpias<-reglasDifusas_redundantes[!is.redundant(x = reglasDifusas_redundantes, measure = "confidence")]
-reglasDifusaslimpias #9192 
+reglasDifusaslimpias #9192
+
+
+#Por otro lado, vamos a comprobar si hay diferencia entre cuatro o 10 alfa-cortes
+
+rulesDifusas10<-as.arules("data/TestJoseAngel_compracion10.csv")
+  
+reglasDifusas_redundantes10 <- reglasDifusas10[is.redundant(x = reglasDifusas10, measure = "confidence")]
+reglasDifusas_redundantes10 #33180
+
+reglasDifusaslimpias10<-reglasDifusas_redundantes10[!is.redundant(x = reglasDifusas_redundantes10, measure = "confidence")]
+reglasDifusaslimpias10 #9192
+
 
 
 #Ahora vamos a ver si aplicando el apriori crisp hay mucha diferencia
@@ -115,10 +111,18 @@ reglasCrisplimpias<-rulesCrisp_redundantes[!is.redundant(x = rulesCrisp_redundan
 reglasCrisplimpias
 
 
+
+
+
 #Ahora vamos a comparara las reglas más fuertes por ejemplo para trump  
 
 filtrado_regla_fuzzy_donald <- subset(x = reglasDifusaslimpias,
                                  subset = lhs %in% c("donald.trump"))
+
+
+filtrado_regla_fuzzy_donald10 <- subset(x = reglasDifusaslimpias10,
+                                      subset = lhs %in% c("donald.trump"))
+
 
 
 filtrado_regla_crips_donald <- subset(x = reglasCrisplimpias,
@@ -126,11 +130,16 @@ filtrado_regla_crips_donald <- subset(x = reglasCrisplimpias,
 
 top.rules.confidence_donald_fuzzy <- sort(filtrado_regla_fuzzy_donald, decreasing = TRUE, na.last = NA, by = "confidence")
 
+top.rules.confidence_donald_fuzzy10 <- sort(filtrado_regla_fuzzy_donald10, decreasing = TRUE, na.last = NA, by = "confidence")
+
+
 top.rules.confidence_donald_crisp <- sort(filtrado_regla_crips_donald, decreasing = TRUE, na.last = NA, by = "confidence")
 
 
-inspect(head(top.rules.confidence_donald_fuzzy,17))
 
+
+inspect(head(top.rules.confidence_donald_fuzzy,17))
+inspect(head(top.rules.confidence_donald_fuzzy10,17))
 inspect(head(top.rules.confidence_donald_crisp,17))
 
 #***********************************************************************************
@@ -142,9 +151,6 @@ inspect(head(top.rules.confidence_donald_crisp,17))
 # En este caso tenemos que comparar si los items más relevantes en función del TF casan 
 # en comparación con los mas relevantes del TF-IDF, de esta manera tratamos de acotar
 # cual es la mejor manera de seleccionar los items relevantes para el algoritmo difuso
-
-library("tm")
-library("bigmemory")
 
 #Primero obtenemos el document term matrix en funcion de TF-IDF
 
@@ -195,8 +201,6 @@ tf.and.tf.idf <- cbind(as.character(d.tf$word), as.character(d.tf.idf$word) )
 # Podemos concluir que el resultado es diferente, aunque solo cambian algunos terminos. 
 # Dado que en la literatura siempre se usa el TF-IDF nos decantaremos por este, ya que en un entorno con 
 # más documentos (tweets) seguramente la diferencia sería más notable. 
-
-
 
 
 

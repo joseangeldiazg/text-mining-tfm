@@ -28,8 +28,6 @@ itemUnion <- union(itemLabels(antecedentes), itemLabels(consecuentes))
 antecedentes<-recode(antecedentes, itemUnion)
 consecuentes<-recode(consecuentes, itemUnion)
 
-as.numeric(rules$conf)
-
 #Paso 3: Debemos cargar las reglas a un objeto de tipo arules, para ello, debemos crear itemMatrix
 
 reglas <- new("rules", lhs=antecedentes, rhs=consecuentes,
@@ -57,4 +55,30 @@ filtrado_reglas_donald <- subset(x = reglaslimpias,
 
 inspect(filtrado_reglas_hillary)
 inspect(filtrado_reglas_donald)
+
+
+#Vamos a crear una version de fucion 
+
+as.arules <- function(archivo)
+{
+  #leemos el archivo
+  rules<-read.csv2(archivo, header=F, col.names = c("lhs","rhs","conf"), sep=";", stringsAsFactors = F)
+  antecedentes<-rules$lhs
+  consecuentes<-rules$rhs
+  
+  antecedentes<-strsplit(antecedentes,",")
+  consecuentes<-strsplit(consecuentes,",")
+  
+  antecedentes<-as(antecedentes, "itemMatrix")
+  consecuentes<-as(consecuentes, "itemMatrix")
+  itemUnion <- union(itemLabels(antecedentes), itemLabels(consecuentes))
+  
+  antecedentes<-recode(antecedentes, itemUnion)
+  consecuentes<-recode(consecuentes, itemUnion)
+  
+  reglas <- new("rules", lhs=antecedentes, rhs=consecuentes,
+                quality = data.frame(confidence = as.numeric(rules$conf)))
+  return(reglas)
+}
+
 
