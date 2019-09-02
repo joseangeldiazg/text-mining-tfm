@@ -53,6 +53,7 @@ filtrado_reglas_donald <- subset(x = reglaslimpias,
                                   subset = lhs %in% c("donald.trump"))
 
 
+inspect(head(filtrado_reglas_hillary,300))
 inspect(filtrado_reglas_hillary)
 inspect(filtrado_reglas_donald)
 

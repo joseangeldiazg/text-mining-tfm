@@ -4,10 +4,6 @@
 #***********************************************************************************
 #***********************************************************************************
 
-require("arules")
-library("tm")
-library("bigmemory")
-
 #Cargamos los datos originales y las tranasacciones totales para hacer comparaciones
 
 transacciones.completas<-read.transactions("./data/transaccionescrips.csv")
@@ -78,73 +74,11 @@ df.dataFuzzy.comparacion<-as.data.frame(normalizado)
 
 #Aplicamos en el servidor el algoritmo de reglas y en este punto podemos comprar el número de reglas que aparecen en ambas. 
 
-rulesDifusas<-as.arules("data/TestJoseAngel_compracion.csv")
 
-reglasDifusas_redundantes <- reglasDifusas[is.redundant(x = reglasDifusas, measure = "confidence")]
-reglasDifusas_redundantes #33180
-
-reglasDifusaslimpias<-reglasDifusas_redundantes[!is.redundant(x = reglasDifusas_redundantes, measure = "confidence")]
-reglasDifusaslimpias #9192
-
-
-#Por otro lado, vamos a comprobar si hay diferencia entre cuatro o 10 alfa-cortes
-
-rulesDifusas10<-as.arules("data/TestJoseAngel_compracion10.csv")
-  
-reglasDifusas_redundantes10 <- reglasDifusas10[is.redundant(x = reglasDifusas10, measure = "confidence")]
-reglasDifusas_redundantes10 #33180
-
-reglasDifusaslimpias10<-reglasDifusas_redundantes10[!is.redundant(x = reglasDifusas_redundantes10, measure = "confidence")]
-reglasDifusaslimpias10 #9192
-
-
-
-#Ahora vamos a ver si aplicando el apriori crisp hay mucha diferencia
-
-rulesCrisp <- apriori(transactions.comparacion, parameter = list(sup = 0.001, conf = 0.7, target="rules", minlen=2, maxtime=Inf))
-
-rulesCrisp_redundantes <-rulesCrisp[is.redundant(x = rulesCrisp, measure = "confidence")]
-rulesCrisp_redundantes
-
-
-reglasCrisplimpias<-rulesCrisp_redundantes[!is.redundant(x = rulesCrisp_redundantes, measure = "confidence")]
-reglasCrisplimpias
-
-
-
-
-
-#Ahora vamos a comparara las reglas más fuertes por ejemplo para trump  
-
-filtrado_regla_fuzzy_donald <- subset(x = reglasDifusaslimpias,
-                                 subset = lhs %in% c("donald.trump"))
-
-
-filtrado_regla_fuzzy_donald10 <- subset(x = reglasDifusaslimpias10,
-                                      subset = lhs %in% c("donald.trump"))
-
-
-
-filtrado_regla_crips_donald <- subset(x = reglasCrisplimpias,
-                                   subset = lhs %in% c("donald-trump"))
-
-top.rules.confidence_donald_fuzzy <- sort(filtrado_regla_fuzzy_donald, decreasing = TRUE, na.last = NA, by = "confidence")
-
-top.rules.confidence_donald_fuzzy10 <- sort(filtrado_regla_fuzzy_donald10, decreasing = TRUE, na.last = NA, by = "confidence")
-
-
-top.rules.confidence_donald_crisp <- sort(filtrado_regla_crips_donald, decreasing = TRUE, na.last = NA, by = "confidence")
-
-
-
-
-inspect(head(top.rules.confidence_donald_fuzzy,17))
-inspect(head(top.rules.confidence_donald_fuzzy10,17))
-inspect(head(top.rules.confidence_donald_crisp,17))
 
 #***********************************************************************************
 #***********************************************************************************
-#Comparativa 2: TV vs TF-IDF
+#Comparativa 2: TF vs TF-IDF
 #***********************************************************************************
 #***********************************************************************************
 
@@ -152,55 +86,40 @@ inspect(head(top.rules.confidence_donald_crisp,17))
 # en comparación con los mas relevantes del TF-IDF, de esta manera tratamos de acotar
 # cual es la mejor manera de seleccionar los items relevantes para el algoritmo difuso
 
+library("tm")
+
 #Primero obtenemos el document term matrix en funcion de TF-IDF
 
 
 dtm.TF.IDF <- DocumentTermMatrix(finalCorpus,
-                          control = list(weighting = function(x) weightTfIdf(x, normalize = FALSE), wordLengths = c(1, 15)))
-
-dtm.TF.IDF <- removeSparseTerms(dtm.TF.IDF, 0.99)
+                          control = list(weighting = function(x) weightTfIdf(x, normalize = FALSE), wordLengths = c(1, 13), 
+                                         stopwords = TRUE))
 
 #Ahora obteneos el document term matrix en funcion del TF
 
 dtm.TF <- DocumentTermMatrix(finalCorpus,
-                                 control = list(weighting = function(x) weightTf(x), wordLengths = c(1, 15)))
-
-dtm.TF <- removeSparseTerms(dtm.TF, 0.99)
+                                 control = list(weighting = function(x) weightTf(x), wordLengths = c(1, 13),
+                                                stopwords = TRUE))
 
 
 #Vamos a pasar a matrices normales para trabajar con los gráficos. Tambien eliminamos aquellos terminos poco frecuentes.  
 
+
 m.tf.idf <- as.matrix(dtm.TF.IDF)
-m.tf.idf<-t(m.tf.idf)
 v.tf.idf <- sort(rowSums(m.tf.idf),decreasing=TRUE)
-d.tf.idf <- data.frame(word = as.character(names(v.tf.idf)),freq=v.tf.idf)
+d.tf.idf <- data.frame(word = names(v.tf.idf),freq=v.tf.idf)
 
 
-m.tf <- as.matrix(dtm.TF)
-m.tf <- t(m.tf)
-v.tf <- sort(rowSums(m.tf),decreasing=TRUE)
-d.tf <- data.frame(word = as.character(names(v.tf)),freq=v.tf)
+m.tf.idf <- as.matrix(dtm.TF.IDF)
+v.tf.idf <- sort(rowSums(m.tf.idf),decreasing=TRUE)
+d.tf.idf <- data.frame(word = names(v.tf.idf),freq=v.tf.idf)
   
 
 #Ahora visualizamos para obtener conclusiones al respecto, usaremos histograma y tag clouds
 
 
-barplot(d.tf.idf[1:72,]$freq, las = 2, names.arg = d.tf.idf[1:72,]$word,
-        col ="lightblue", main ="TF-IDF",
-        ylab = "Frecuencia")
-
-barplot(d.tf[1:72,]$freq, las = 2, names.arg = d.tf[1:72,]$word,
-        col ="lightblue", main ="TF",
-        ylab = "Frecuencia")
 
 
-#Vamos a pintar ambas tablas a un lado y otro para ver los terminos que cambian
-
-tf.and.tf.idf <- cbind(as.character(d.tf$word), as.character(d.tf.idf$word) )
-
-# Podemos concluir que el resultado es diferente, aunque solo cambian algunos terminos. 
-# Dado que en la literatura siempre se usa el TF-IDF nos decantaremos por este, ya que en un entorno con 
-# más documentos (tweets) seguramente la diferencia sería más notable. 
 
 
 
