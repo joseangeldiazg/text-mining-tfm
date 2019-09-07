@@ -2,7 +2,7 @@
 #!/opt/anaconda3/bin/python3
 
 
-#preprocess.py: Script para realizar un preprocesado de datos textuales en español basado en técnicas de text mining y nlp.
+#bigdata.py script para pasar el procesado a bigdata
 
 #*******************************************************
 #Librerias:
